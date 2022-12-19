@@ -1,5 +1,7 @@
 const express = require("express");
 const cors = require("cors");
+const jwt = require("jsonwebtoken");
+require("dotenv").config();
 const mongoose = require("mongoose");
 const User = require("./models/user.model");
 const app = express(); //initialize the app
@@ -14,6 +16,7 @@ mongoose.connect("mongodb://localhost:27017/user-authentication-mern", () => {
 
 // register endpoint
 app.post("/api/register", async (req, res) => {
+  // create the user and save it to the db
   try {
     await User.create({
       name: req.body.name,
@@ -29,12 +32,22 @@ app.post("/api/register", async (req, res) => {
 
 //login endpoint
 app.post("/api/login", async (req, res) => {
+  // find the user with the email and passw from the request, otherwise returns null
   const user = await User.findOne({
     email: req.body.email,
     password: req.body.password,
   });
+  //console.log("user login endpoint", user); // returns the entire object that matches these credentials
   if (user) {
-    return res.json({ status: "ok", user: true });
+    // create the token - pass data that want to be saved into browser and a secret key that checks whether the credentials has changed or not
+    const token = jwt.sign(
+      {
+        name: user.name,
+        email: user.email,
+      },
+      process.env.ACCESS_TOKEN_SECRET
+    );
+    return res.json({ status: "ok", user: token });
   } else {
     return res.json({ status: "error", user: false });
   }
