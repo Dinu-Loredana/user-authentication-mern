@@ -12,6 +12,7 @@ mongoose.connect("mongodb://localhost:27017/user-authentication-mern", () => {
   console.log("DB connected successfully");
 });
 
+// register endpoint
 app.post("/api/register", async (req, res) => {
   try {
     await User.create({
@@ -26,6 +27,18 @@ app.post("/api/register", async (req, res) => {
   }
 });
 
+//login endpoint
+app.post("/api/login", async (req, res) => {
+  const user = await User.findOne({
+    email: req.body.email,
+    password: req.body.password,
+  });
+  if (user) {
+    return res.json({ status: "ok", user: true });
+  } else {
+    return res.json({ status: "error", user: false });
+  }
+});
 // app.get("/hello", (req, res) => {
 //   res.send("hello thereee");
 // });
