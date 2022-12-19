@@ -7,7 +7,7 @@ function App() {
 
   const registerUser = async (e) => {
     e.preventDefault();
-    const response = await fetch("http://localhost:1337/api/register", {
+    const response = await fetch("http://localhost:1333/api/register", {
       // define route for this endpoint in server; what response to send to client when a req has been made to this endpoint
       method: "POST",
       headers: {
