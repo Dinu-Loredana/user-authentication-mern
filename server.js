@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
 require("dotenv").config();
 const mongoose = require("mongoose");
 const User = require("./models/user.model");
@@ -18,11 +19,13 @@ mongoose.connect("mongodb://localhost:27017/user-authentication-mern", () => {
 // register endpoint
 app.post("/api/register", async (req, res) => {
   // create the user and save it to the db
+
+  const hashedPassword = await bcrypt.hash(req.body.password, 10);
   try {
     await User.create({
       name: req.body.name,
       email: req.body.email,
-      password: req.body.password,
+      password: hashedPassword, //store encrypted passw into db
     });
     res.json({ status: "ok" });
   } catch (err) {
@@ -36,10 +39,18 @@ app.post("/api/login", async (req, res) => {
   // find the user with the email and passw from the request, otherwise returns null
   const user = await User.findOne({
     email: req.body.email,
-    password: req.body.password,
+    //password: req.body.password,
   });
+
+  const isPasswordValid = await bcrypt.compare(
+    req.body.password,
+    user.password
+  );
   //console.log("user login endpoint", user); // returns the entire object that matches these credentials
-  if (user) {
+  if (!user) {
+    return { status: "error", error: "invalid login" };
+  }
+  if (isPasswordValid) {
     // create the token - pass data that want to be saved into browser and a secret key that checks whether the credentials has changed or not
     const token = jwt.sign(
       {
