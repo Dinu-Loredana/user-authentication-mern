@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const mongoose = require("mongoose");
 const User = require("./models/user.model");
+const { response } = require("express");
 const app = express(); //initialize the app
 // cors & json are used by app as middleware
 app.use(cors());
@@ -50,6 +51,42 @@ app.post("/api/login", async (req, res) => {
     return res.json({ status: "ok", user: token });
   } else {
     return res.json({ status: "error", user: false });
+  }
+});
+
+// quote endpoint
+app.get("/api/quote", async (req, res) => {
+  // get token from the req header
+  const token = req.headers["x-access-token"];
+  console.log("token from header", token);
+  try {
+    // check the token with the secret key/ perform the authentication
+    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+    console.log("-----decoded", decoded);
+
+    const email = decoded.email;
+    // get the user based on the email from the token
+    const user = await User.findOne({ email: email });
+    console.log("user", user); // returns the entire object
+    return res.json({ status: "ok", quotes: user.quotes });
+  } catch (error) {
+    res.json({ status: "error", error: "invalid token get /api/quote" });
+  }
+});
+
+app.post("/api/quote", async (req, res) => {
+  const token = req.headers["x-access-token"];
+  try {
+    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+    const email = decoded.email;
+    const quotes = decoded.quotes;
+    await User.updateOne(
+      { email: email },
+      { $push: { quotes: req.body.quote } }
+    );
+    return res.json({ status: "ok" });
+  } catch (error) {
+    res.json({ status: "error", error: "invalid token post /api/quote" });
   }
 });
 // app.get("/hello", (req, res) => {
