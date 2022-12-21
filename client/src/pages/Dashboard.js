@@ -4,11 +4,11 @@ import jwt_decode from "jwt-decode";
 import { useNavigate } from "react-router-dom";
 
 function Dashboard() {
-  const [tempQuote, setTempQuote] = useState("");
   const [quote, setQuote] = useState("");
+  const [quotes, setQuotes] = useState([]);
   const navigate = useNavigate();
 
-  const saveQuoteHandler = async (e) => {
+  const quoteHandler = async (e) => {
     e.preventDefault();
     const req = await fetch("http://localhost:1333/api/quote", {
       method: "POST",
@@ -17,32 +17,28 @@ function Dashboard() {
         "x-access-token": localStorage.getItem("token"),
       },
       body: JSON.stringify({
-        quote: tempQuote,
+        quote,
       }),
     });
 
     const data = await req.json();
     if (data.status === "ok") {
-      setQuote(tempQuote);
-      setTempQuote("");
+      alert("Quote added.");
+      setQuote("");
     } else {
       alert(data.error);
     }
   };
 
-  const populateData = async () => {
+  const getQuotes = async () => {
     const req = await fetch("http://localhost:1333/api/quote", {
       headers: {
         "x-access-token": localStorage.getItem("token"),
       },
     });
-
     const data = await req.json();
-    console.log("req", req);
-    console.log("data", data);
-
     if (data.status === "ok") {
-      setQuote(data.quote);
+      setQuotes(data.quotes);
     } else {
       alert(data.error);
     }
@@ -60,23 +56,30 @@ function Dashboard() {
         navigate("/login");
       } else {
         // if user exists populate the data
-        populateData();
+        getQuotes();
       }
     }
-  }, [navigate]);
+  }, [navigate, quote]);
 
   return (
     <div>
-      <form onSubmit={saveQuoteHandler}>
+      <form onSubmit={quoteHandler}>
         <input
           type="text"
           placeholder="your favorite quote"
-          value={tempQuote}
-          onChange={(e) => setTempQuote(e.target.value)}
+          value={quote}
+          onChange={(e) => setQuote(e.target.value)}
         />
+        <br />
         <input type="submit" value="Save" />
       </form>
-      <p>Your quote: {quote || "No quote found. Add a quote."}</p>
+      <h5>Your quotes:</h5>
+      <ul>
+        {quotes &&
+          quotes.length > 0 &&
+          quotes.map((q, i) => <li key={i}>{q}</li>)}
+      </ul>
+      {quotes.length === 0 && <p>No quote found. Add a quote.</p>}
     </div>
   );
 }
