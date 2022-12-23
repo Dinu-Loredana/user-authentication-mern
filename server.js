@@ -20,17 +20,39 @@ mongoose.connect("mongodb://localhost:27017/user-authentication-mern", () => {
 app.post("/api/register", async (req, res) => {
   // create the user and save it to the db
 
-  const hashedPassword = await bcrypt.hash(req.body.password, 10);
+  const { name, email, password } = req.body;
+  if (!name) {
+    return res.status(400).json({ msg: "Please enter a name." });
+  }
+  if (!email) {
+    return res.status(400).json({ msg: "Please enter an email." });
+  }
+  if (!password) {
+    return res.status(400).json({ msg: "Please enter a password." });
+  }
+  if (password.length < 5) {
+    return res.status(400).json({
+      msg: "Password needs to be at least 5 characters",
+    });
+  }
+
+  const emailExist = await User.findOne({ email });
+  if (emailExist) {
+    return res.status(400).json({ msg: "Email already exists." });
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+
   try {
-    await User.create({
-      name: req.body.name,
-      email: req.body.email,
+    const user = await User.create({
+      name,
+      email,
       password: hashedPassword, //store encrypted passw into db
     });
-    res.json({ status: "ok" });
+    res.status(201).json({ user });
   } catch (err) {
     console.log(err);
-    res.json({ status: "error", error: "Duplicate email" });
+    res.status(400).json({ msg: "Something went wroong" });
   }
 });
 
@@ -100,6 +122,7 @@ app.post("/api/quote", async (req, res) => {
     res.json({ status: "error", error: "invalid token post /api/quote" });
   }
 });
+
 // app.get("/hello", (req, res) => {
 //   res.send("hello thereee");
 // });
